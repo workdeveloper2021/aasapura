@@ -79,6 +79,7 @@
                                     <div class="input-group">
                                         <label for="location-search" class="form-label" onclick="show_locations()">Location</label>
                                         <select class="form-control" name="location">
+                                            <option value="">Select Location</option>
                                             <?php foreach(get_areas() as $key => $value){ ?>
                                             <option value="<?= $value->id ?>"><?= $value->name ?></option>
                                             <?php } ?>
