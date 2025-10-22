@@ -1,0 +1,131 @@
+.option-flex {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: none;
+  margin-bottom: 2rem;
+}
+.option-flex .custom-radio {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.option-flex .custom-radio [type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.option-flex .custom-radio .radio-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid black;
+  position: relative;
+  border-radius: 2px;
+}
+.option-flex .custom-radio .label-icon {
+  background-size: auto 40px;
+  background-repeat: no-repeat;
+  background-position: center 10px;
+  margin-bottom: 0;
+  padding: 3px 9px;
+  padding-top: 6px;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  font-size: 14px;
+  align-items: baseline;
+  -webkit-transition: all 0.3s cubic-bezier(0.07, 0.49, 1, 0.08);
+  -moz-transition: all 0.3s cubic-bezier(0.07, 0.49, 1, 0.08);
+  transition: all 0.3s cubic-bezier(0.07, 0.49, 1, 0.08);
+}
+
+.option-flex .custom-radio .or-separator {
+  margin: 0 35px;
+}
+.option-flex .custom-radio label,
+.option-flex .custom-radio .or-separator {
+  font-family: "Dosis", sans-serif;
+  font-size: 17px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 130%;
+  letter-spacing: 0.03em;
+  text-align: center;
+  color: black;
+}
+
+/* CHECKED STYLES */
+[type="radio"]:checked + .label-icon {
+  background: #4a43cc;
+  background-size: auto 40px;
+  background-repeat: no-repeat;
+  color: #fff;
+}
+
+/* title */
+
+/* .title {
+  position: relative;
+  font-size: 24px;
+  margin-bottom: 20px; 
+}
+
+.title::after {
+  content: "";
+  display: block;
+  width: 10%;
+  height: 4px;
+  background-image: url("../images/about/img-1.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: bottom center;
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+} */
+
+/* gallery */
+
+/* Main CSS */
+.grid-wrapper > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.grid-wrapper > div > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.grid-wrapper {
+  display: grid;
+  grid-gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-auto-rows: 200px;
+  grid-auto-flow: dense;
+}
+.grid-wrapper .wide {
+  grid-column: span 2;
+}
+.grid-wrapper .tall {
+  grid-row: span 2;
+}
+.grid-wrapper .big {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+/* upload img */
+
+@media screen and (max-width: 768px) {
+  .img-upload-box {
+    width: 250px !important;
+  }
+}
+
+/* custom date  */
