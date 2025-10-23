@@ -118,9 +118,11 @@
 
 .package-discount{
     font-weight: 700;
-    color: gray;
+    color: #28a745;
     margin-left: 5px;
 }
+
+
 
 .btn-purchase {
     margin-top: 10px;
