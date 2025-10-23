@@ -52,11 +52,21 @@
                                         <th>Qunatity</th>
                                         <th>Price</th>
                                         <th>Purchase Price</th>
+                                        <th>Discount</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($data as $key => $value) { ?>
+                                    <?php foreach ($data as $key => $value) { 
+                                        $price = $value->price;
+                                        $purchase_price = $value->purchase_price;
+
+                                        // Difference
+                                        $discount = $price - $purchase_price;
+
+                                        // Percentage difference (based on price)
+                                        $discount = ($discount / $price) * 100;
+                                    ?>
                                     <tr>
 
                                         <?php
@@ -71,6 +81,7 @@
                                         <td>{{ $value->post_quantity }}</td>
                                         <td>{{ $value->price }}</td>
                                         <td>{{ $value->purchase_price }}</td>
+                                        <td>{{ round($discount, 2) }}%</td>
                                         <td>
                                             <a href="{{ route('deleterow', ['table' => 'state', 'id' => $value->id, 'image' => $image]) }}"
                                                 onclick="return confirm('Are you sure !')"
