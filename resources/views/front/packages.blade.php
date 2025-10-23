@@ -116,6 +116,12 @@
     color: #28a745;
 }
 
+.package-discount{
+    font-weight: 700;
+    color: gray;
+    margin-left: 5px;
+}
+
 .btn-purchase {
     margin-top: 10px;
     border-radius: 25px;
@@ -341,6 +347,18 @@
             $isCurrent = $activePackage && $activePackage->id == $value->id;
             $isDowngrade = $activePackage && $value->post_quantity < $activePackage->post_quantity;
             $isUpgrade = $activePackage && $value->post_quantity > $activePackage->post_quantity;
+           
+$price = $value->price;
+$purchase_price = $value->purchase_price;
+
+// Difference
+$discount = $price - $purchase_price;
+
+// Percentage difference (based on price)
+$discount = ($discount / $price) * 100;
+
+
+
         @endphp
 
         <div class="col-md-3 mb-3">
@@ -352,10 +370,13 @@
                         <div class="package-header">
                             <h5 class="package-title">{{ $value->name }}</h5>
                         </div>
+                      <span class="package-discount text-left d-block">{{ round($discount, 2) }}% OFF</span>
+
                         <div class="package-body">
                             <p><b>{{ $value->post_quantity }} Posts</b></p>
                             <p><b>{{ $value->name }} Posts</b></p>
-                            <p class="package-price">₹ {{ $value->purchase_price }}</p>
+                            <p class="package-price"><del>₹ {{ $value->price }}</del><span> ₹ {{ $value->purchase_price }}</span></p>
+                            
 
                             {{-- Logic Section (UI same, sirf button logic alag) --}}
                             @if(!$activePackage)
