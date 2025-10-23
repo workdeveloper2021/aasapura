@@ -122,6 +122,8 @@
     margin-left: 5px;
 }
 
+
+
 .btn-purchase {
     margin-top: 10px;
     border-radius: 25px;
