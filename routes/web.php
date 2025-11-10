@@ -62,7 +62,8 @@ Route::get('/accept-checkout/{bookid}', [Bookingcontroller::class, 'acceptchecko
 Route::get('/cancel-checkout/{bookid}', [Bookingcontroller::class, 'cancelcheckout'])->middleware(Usernotallowed::class)->name('cancelcheckout');
 
 
-Route::post('/verify-payment', [Bookingcontroller::class, 'verifypayment'])->middleware(Checkauth::class)->name('verifypayment');
+// Route::post('/verify-payment', [Bookingcontroller::class, 'verifypayment'])->middleware(Checkauth::class)->name('verifypayment');
+Route::post('/verify-payment', [Bookingcontroller::class, 'verifypayment'])->name('verifypayment');
 
 
 

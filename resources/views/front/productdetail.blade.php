@@ -35,10 +35,14 @@
         color: #f5b301;
     }
 </style>
-
+<style>
+.booked-date a {
+    background-color: #4caf50 !important;
+    color: white !important;
+    border-radius: 50%;
+}
+</style>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    
-    
 @endsection
 <main class="main">
     <div class="page-content">
@@ -577,14 +581,14 @@
         @include('partials.booking-form', ['product' => $product])
     @endif
 @else
-    @if(bookornotbook($product->id) == "Booked")
+    {{-- @if(bookornotbook($product->id) == "Booked")
         <div>
             <p style="text-align: center;color: #fff;background-color: #ff0000;padding: 15px 0px;">This cycle has been already booked.</p>
         </div>
-    @else
+    @else --}}
         {{-- Show booking form --}}
         @include('partials.booking-form', ['product' => $product])
-    @endif
+    {{-- @endif --}}
 @endif
 
                         </div>
@@ -925,57 +929,128 @@
 
 <script>
 $(function() {
-    // Get today's date
-    var today = new Date();
-    
-    // Initialize checkin datepicker with min date as today
+    const bookedRanges = @json($bookedRanges);
+    const today = new Date();
+
+    // ✅ Utility: Parse date string (YYYY-MM-DD) as *local date* (not UTC)
+    function parseLocalDate(str) {
+        const parts = str.split('-');
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    // ✅ Function to check if a date falls in any fully booked range
+    function isDateBooked(date) {
+        // compare in local timezone, not UTC
+        for (let range of bookedRanges) {
+            const start = parseLocalDate(range.start);
+            const end = parseLocalDate(range.end);
+
+            // Include both start and end dates in booked period
+            if (date >= start && date <= end) {
+                return [false, "booked-date", "Fully Booked"];
+            }
+        }
+        return [true, "", "Available"];
+    }
+
+    // ✅ Initialize Check-In Datepicker
     $("#datepicker").datepicker({
         dateFormat: "dd/mm/yy",
         minDate: today,
+        beforeShowDay: isDateBooked,
         onSelect: function(selectedDate) {
-            // When a checkin date is selected, update checkout min date
-            var checkinDate = $(this).datepicker('getDate');
-            
-            // Update the checkout datepicker's minimum date
-            $("#datepicker2").datepicker("option", "minDate", checkinDate);
-            
-            // If checkout date is before the new checkin date, reset it to checkin date
-            var checkoutDate = $("#datepicker2").datepicker('getDate');
+            const checkinDate = $(this).datepicker('getDate');
+
+            let maxCheckoutDate = null;
+            for (let range of bookedRanges) {
+                const start = parseLocalDate(range.start);
+                if (start > checkinDate && (!maxCheckoutDate || start < maxCheckoutDate)) {
+                    maxCheckoutDate = start;
+                }
+            }
+
+            if (maxCheckoutDate) {
+                maxCheckoutDate.setDate(maxCheckoutDate.getDate() - 1);
+            }
+
+            $("#datepicker2").datepicker("option", {
+                minDate: checkinDate,
+                maxDate: maxCheckoutDate || null
+            });
+
+            const checkoutDate = $("#datepicker2").datepicker('getDate');
             if (checkoutDate && checkoutDate < checkinDate) {
                 $("#datepicker2").datepicker('setDate', checkinDate);
             }
         }
     });
-    
-    // Initialize checkout datepicker
+
+    // ✅ Initialize Check-Out Datepicker
     $("#datepicker2").datepicker({
         dateFormat: "dd/mm/yy",
-        minDate: $("#datepicker").datepicker('getDate') || today
+        minDate: today,
+        beforeShowDay: isDateBooked
     });
-    
-    // Form validation before submission
+
+    // ✅ Form Validation before submit
     $("form[action^='/book-items/']").on('submit', function(e) {
-        var checkinDate = $("#datepicker").datepicker('getDate');
-        var checkoutDate = $("#datepicker2").datepicker('getDate');
-        
-        // Check if dates are selected
+        const checkinDate = $("#datepicker").datepicker('getDate');
+        const checkoutDate = $("#datepicker2").datepicker('getDate');
+
         if (!checkinDate || !checkoutDate) {
-            alert("Please select both check-in and check-out dates");
+            alert("Please select both Check-In and Check-Out dates");
             e.preventDefault();
             return false;
         }
-        
-        // Check if checkout is after checkin
+
         if (checkoutDate < checkinDate) {
-            alert("Check-out date cannot be before check-in date");
+            alert("Check-Out date cannot be before Check-In date");
             e.preventDefault();
             return false;
         }
-        
+
+        // ✅ Check overlap with booked ranges
+        for (let range of bookedRanges) {
+            const start = parseLocalDate(range.start);
+            const end = parseLocalDate(range.end);
+
+            if ((checkinDate >= start && checkinDate <= end) ||
+                (checkoutDate >= start && checkoutDate <= end) ||
+                (checkinDate <= start && checkoutDate >= end)) {
+                alert("Selected dates include a booked period. Please choose different dates.");
+                e.preventDefault();
+                return false;
+            }
+        }
+
         return true;
     });
 });
 </script>
+
+
+
+
+<style>
+/* ✅ Highlight booked dates in green */
+.booked-date a {
+    background-color: #4caf50 !important;
+    color: white !important;
+    border-radius: 50%;
+}
+</style>
+
+
+<style>
+/* Highlight booked dates in green */
+.booked-date a {
+    background-color: #4CAF50 !important;
+    color: white !important;
+    text-decoration: line-through;
+    pointer-events: none;
+}
+</style>
+
 
 <script src="{{ url('website') }}/assets/js/bootstrap-input-spinner.js"></script>
 
@@ -990,21 +1065,8 @@ $(function() {
         });
     </script>
     
-     <script>
-        $(function() {
-            $("#datepicker").datepicker({
-                dateFormat: "dd/mm/yy" // Set the date format to dd/mm/yyyy
-            });
-        });
-    </script>
-     
-     <script>
-        $(function() {
-            $("#datepicker2").datepicker({
-                dateFormat: "dd/mm/yy" // Set the date format to dd/mm/yyyy
-            });
-        });
-    </script>
+   
+
     
 
 

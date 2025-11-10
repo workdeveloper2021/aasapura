@@ -547,9 +547,22 @@ public function bookcycle(Request $request)
 
     if ($request->isMethod('post')) {
         $createorder = create_razorpay_order($payNow * 100, rand());
+        // $createorder2 = create_hdfc_order($payNow, rand());
+        
+
+    //   echo "<pre>";
+    //   print_r($createorder);
+    //   die;
+
+
         if ($createorder->status === 'created') {
+
+        // if (isset($createorder2['status']) && $createorder2['status'] === 'NEW') {
+
             $booking = [
-                'order_id'       => $createorder->id,
+               'order_id'       => $createorder->id,
+                // 'order_id'       => $createorder2['id'],
+                // 'getwayOrderId'       => $createorder2['order_id'],
                 'user_id'        => $data['user_id'],
                 'product_id'     => $data['product_id'],
                 'seller_id'      => $product->user_id,
@@ -564,9 +577,11 @@ public function bookcycle(Request $request)
                 'securityamount' => $payNow,
                 'verify'         => 'N',
                 'payment_verify' => 'N',
+                // 'sdk_payload' => json_encode($createorder2['sdk_payload'])
             ];
             session()->put('booking_data', $booking);
-            return redirect('/pay-items-amount');
+            // return redirect($createorder2['payment_links']['web']);
+             return redirect('/pay-items-amount');
         }
     }
 
@@ -666,6 +681,18 @@ public function bookcycle(Request $request)
     if (empty($data)) {
         return redirect('/');
     }
+
+    // echo "<pre>";
+    // print_r($request->all());
+    //  $signature_algorithm = $request->signature_algorithm;
+    //  $status_id = $request->status_id;
+    //  $signature = $request->signature;
+    //  $order_id = $request->order_id;
+
+    //  $verifyOrder = verifyHdfcOrder($order_id, $signature_algorithm, $status_id, $signature);
+
+    //  print_r($verifyOrder);
+    // echo die;
 
     $razorpay_payment_id = $request->razorpay_payment_id;
     $razorpay_order_id   = $request->razorpay_order_id;

@@ -23,7 +23,7 @@
 
                 <div class="col-md-12">
                     <div class="card-body">
-                        <img src="{{ url('') }}/admin/logo/logo.png" alt="" class="img-fluid mb-4">
+                        <img src="{{ url('uploads') }}/<?= site_logo() ?>" alt="" class="img-fluid mb-4">
                         <form action="{{ route('login_via_email_password') }}" method="post">
                             @csrf
                             <h4 class="mb-3 f-w-400">Signin</h4>

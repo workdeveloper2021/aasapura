@@ -376,7 +376,7 @@ $discount = ($discount / $price) * 100;
 
                         <div class="package-body">
                             <p><b>{{ $value->post_quantity }} Posts</b></p>
-                            <p><b>{{ $value->name }} Posts</b></p>
+                            <p><b>{{ $value->name }} </b></p>
                             <p class="package-price"><del>₹ {{ $value->price }}</del><span> ₹ {{ $value->purchase_price }}</span></p>
                             
 

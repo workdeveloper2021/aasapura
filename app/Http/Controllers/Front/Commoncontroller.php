@@ -35,48 +35,103 @@ use App\Mail\Verificationmail;
 use Carbon\Carbon;
 class Commoncontroller extends Controller
 {
-   public function searchAvailableProducts(Request $request)
-{
-    $checkIn = Carbon::parse($request->input('check_in'));
-    $checkOut = Carbon::parse($request->input('check_out'));
+//    public function searchAvailableProducts(Request $request)
+// {
+//     $checkIn = Carbon::parse($request->input('check_in'));
+//     $checkOut = Carbon::parse($request->input('check_out'));
 
-    $bookedProductIds = DB::table('booking')
-        // ->where('owner_status', 'accept')
-        ->where('checkout_status', '!=', 'accept')
-        ->where(function ($query) use ($checkIn, $checkOut) {
-            $query->whereBetween('check_in', [$checkIn, $checkOut])
-                  ->orWhereBetween('check_out', [$checkIn, $checkOut])
-                  ->orWhere(function ($query) use ($checkIn, $checkOut) {
-                      $query->where('check_in', '<=', $checkIn)
-                            ->where('check_out', '>=', $checkOut);
-                  });
-        })
-        ->pluck('product_id');
+//     $bookedProductIds = DB::table('booking')
+//         // ->where('owner_status', 'accept')
+//         ->where('checkout_status', '!=', 'accept')
+//         ->where(function ($query) use ($checkIn, $checkOut) {
+//             $query->whereBetween('check_in', [$checkIn, $checkOut])
+//                   ->orWhereBetween('check_out', [$checkIn, $checkOut])
+//                   ->orWhere(function ($query) use ($checkIn, $checkOut) {
+//                       $query->where('check_in', '<=', $checkIn)
+//                             ->where('check_out', '>=', $checkOut);
+//                   });
+//         })
+//         ->pluck('product_id');
         
+//     $products = Product::where('is_verify', 'Y')
+//         ->where(function ($q) {
+//             $q->where('repair_status', '!=', 'requested')
+//               ->orWhereNull('repair_status');
+//         })
+//         ->whereNotIn('id', $bookedProductIds)
+//         ->whereNotIn('id', $bookedProductIds)
+//           ->when($request->filled('location'), function ($q) use ($request) {
+//             $q->where('mlocation', 'like', '%' . $request->location . '%');
+//         })
+//          ->when($request->filled('category'), function ($q) use ($request) {
+//         $q->where('category', $request->category);
+//     })
+//         ->where('quantity', '>=', $request->quantity)
+//         ->orderBy('id', 'desc')
+//         ->with('stateRelation:id,name', 'districtRelation:id,name')
+//         ->take(20)
+//         ->get([
+//             'id', 'category', 'title', 'slug', 'price',
+//             'rent', 'image1', 'created_at', 'state', 'district','mlocation'
+//         ]);
+
+//     return view('front.search.available-products', compact('products', 'checkIn', 'checkOut'));
+// }
+
+
+public function searchAvailableProducts(Request $request)
+{
+    $checkIn = \Carbon\Carbon::parse($request->input('check_in'))->startOfDay();
+    $checkOut = \Carbon\Carbon::parse($request->input('check_out'))->endOfDay();
+
+    // Step 1: Get booked quantity per product for overlapping dates
+    $bookedQuantities = DB::table('booking')
+        ->select('product_id', DB::raw('SUM(quantity) as total_booked'))
+        ->where(function ($query) {
+            // Exclude cancelled / completed / accepted bookings
+            $query->whereNotIn('booking_status', ['cancelled', 'complete'])
+                  ->whereNotIn('booking_status_user', ['cancelled'])
+                  ->where('checkout_status', '!=', 'accept');
+        })
+        ->where(function ($query) use ($checkIn, $checkOut) {
+            // Overlapping date range condition
+            $query->where('check_in', '<=', $checkOut)
+                  ->where('check_out', '>=', $checkIn);
+        })
+        ->groupBy('product_id')
+        ->pluck('total_booked', 'product_id'); // returns [product_id => booked_qty]
+
+    // Step 2: Get all verified and available products
     $products = Product::where('is_verify', 'Y')
         ->where(function ($q) {
             $q->where('repair_status', '!=', 'requested')
               ->orWhereNull('repair_status');
         })
-        ->whereNotIn('id', $bookedProductIds)
-        ->whereNotIn('id', $bookedProductIds)
-          ->when($request->filled('location'), function ($q) use ($request) {
+        ->when($request->filled('location'), function ($q) use ($request) {
             $q->where('mlocation', 'like', '%' . $request->location . '%');
         })
-         ->when($request->filled('category'), function ($q) use ($request) {
-        $q->where('category', $request->category);
-    })
+        ->when($request->filled('category'), function ($q) use ($request) {
+            $q->where('category', $request->category);
+        })
         ->where('quantity', '>=', $request->quantity)
         ->orderBy('id', 'desc')
         ->with('stateRelation:id,name', 'districtRelation:id,name')
-        ->take(20)
         ->get([
-            'id', 'category', 'title', 'slug', 'price',
-            'rent', 'image1', 'created_at', 'state', 'district','mlocation'
-        ]);
+            'id', 'category', 'title', 'slug', 'price', 'rent', 'image1',
+            'created_at', 'state', 'district', 'mlocation', 'quantity'
+        ])
+        // Step 3: Filter out products which are fully booked in that date range
+        ->filter(function ($product) use ($bookedQuantities, $request) {
+            $bookedQty = $bookedQuantities[$product->id] ?? 0;
+            $availableQty = $product->quantity - $bookedQty;
+            return $availableQty >= $request->quantity; // only if enough qty available
+        })
+        ->take(20)
+        ->values();
 
     return view('front.search.available-products', compact('products', 'checkIn', 'checkOut'));
 }
+
     public function index(){
         $sitesetting = Sitesetting::find(1);
         $seo = json_decode($sitesetting->info_second, true);
@@ -88,19 +143,56 @@ class Commoncontroller extends Controller
 
 
  
+         // ✅ Step 1: Define today’s date range
+    $today = \Carbon\Carbon::today()->startOfDay();
+    $tomorrow = \Carbon\Carbon::tomorrow()->endOfDay();
 
-        $data['recent_product'] = Product::where('is_verify','Y')
-    ->where(function($query) {
-        $query->where('repair_status', '!=', 'requested')
+    // ✅ Step 2: Get total booked quantity per product (today’s date)
+    $bookedQuantities = DB::table('booking')
+        ->select('product_id', DB::raw('SUM(quantity) as total_booked'))
+        ->where(function ($query) {
+            $query->whereNotIn('booking_status', ['cancelled', 'complete'])
+                  ->whereNotIn('booking_status_user', ['cancelled'])
+                  ->where('checkout_status', '!=', 'accept');
+        })
+        ->where(function ($query) use ($today, $tomorrow) {
+            $query->where('check_in', '<=', $tomorrow)
+                  ->where('check_out', '>=', $today);
+        })
+        ->groupBy('product_id')
+        ->pluck('total_booked', 'product_id'); 
+
+    // ✅ Step 3: Get verified & active products
+    $data['recent_product'] = Product::where('is_verify', 'Y')
+        ->where(function ($q) {
+            $q->where('repair_status', '!=', 'requested')
               ->orWhereNull('repair_status');
-    })
-    ->orderBy('id','desc')
-    ->join('state', 'products.state', '=', 'state.id')
-    ->join('district', 'products.district', '=', 'district.id')
-    ->select('products.id','products.category', 'products.title','products.slug','products.price',
-             'products.rent','products.image1','products.created_at',
-             'state.name as state_name','district.name as district_name')
-    ->take(20)->get();
+        })
+        ->join('state', 'products.state', '=', 'state.id')
+        ->join('district', 'products.district', '=', 'district.id')
+        ->select(
+            'products.id',
+            'products.category',
+            'products.title',
+            'products.slug',
+            'products.price',
+            'products.rent',
+            'products.image1',
+            'products.quantity',
+            'products.created_at',
+            'state.name as state_name',
+            'district.name as district_name'
+        )
+        ->orderBy('products.id', 'desc')
+        ->get()
+        // ✅ Step 4: Filter — only keep products where available quantity > 0
+        ->filter(function ($product) use ($bookedQuantities) {
+            $bookedQty = $bookedQuantities[$product->id] ?? 0;
+            $availableQty = $product->quantity - $bookedQty;
+            return $availableQty > 0; // only if some qty left
+        })
+        ->take(20)
+        ->values();
 
 
 
@@ -366,7 +458,11 @@ public function submitrating(Request $request){
         return view('front.category');
     }
     public function productdetail($slug){
-        $product = Product::where('slug',$slug)->where('is_verify','Y')->first();
+
+           // ✅ Step 1: Get product
+    $product = Product::where('slug', $slug)
+        ->where('is_verify', 'Y')
+        ->firstOrFail();
 
         if (isset($product)){
             $user = User::where('id',$product->user_id)->first();
@@ -381,7 +477,73 @@ public function submitrating(Request $request){
             ->select('products.id','products.category', 'products.title','products.slug','products.price','products.image1','products.created_at','state.name as state_name','district.name as district_name')
             ->orderBy('products.id','desc')
             ->take(20)->get();
-            return view('front.productdetail',compact('product','user','relatedproducts','productreviews'));
+
+$bookings = Booking::where('product_id', $product->id)
+        ->whereNotIn('booking_status', ['cancelled', 'complete'])
+        ->whereNotIn('booking_status_user', ['cancelled'])
+        ->where('checkout_status', '!=', 'accept')
+        ->get(['check_in', 'check_out', 'quantity']);
+
+    $bookedDates = [];
+
+    // ✅ Build date-wise quantity
+    foreach ($bookings as $booking) {
+        $start = Carbon::parse($booking->check_in);
+        $end = Carbon::parse($booking->check_out);
+
+        while ($start->lte($end)) {
+            $dateKey = $start->format('Y-m-d');
+            if (!isset($bookedDates[$dateKey])) {
+                $bookedDates[$dateKey] = 0;
+            }
+            $bookedDates[$dateKey] += $booking->quantity;
+            $start->addDay();
+        }
+    }
+
+    // ✅ Merge booked dates into continuous ranges where total qty >= product qty
+$bookedRanges = [];
+$currentRange = null;
+
+foreach (collect($bookedDates)->sortKeys() as $date => $qty) {
+    if ($qty >= $product->quantity) {
+        // agar booked hai, to current range start karo ya extend karo
+        if ($currentRange === null) {
+            $currentRange = [
+                'start' => $date,
+                'end' => $date,
+            ];
+        } else {
+            $previous = Carbon::parse($currentRange['end']);
+            $current = Carbon::parse($date);
+            // check agar continuous date hai
+            if ($previous->addDay()->isSameDay($current)) {
+                $currentRange['end'] = $date;
+            } else {
+                // not continuous, to purani range push karo aur nayi start karo
+                $bookedRanges[] = $currentRange;
+                $currentRange = [
+                    'start' => $date,
+                    'end' => $date,
+                ];
+            }
+        }
+    } else {
+        // booked nahi hai — agar koi current range open hai, to close kar do
+        if ($currentRange !== null) {
+            $bookedRanges[] = $currentRange;
+            $currentRange = null;
+        }
+    }
+}
+
+// ✅ last open range close
+if ($currentRange !== null) {
+    $bookedRanges[] = $currentRange;
+}
+
+ 
+            return view('front.productdetail',compact('product','user','relatedproducts','productreviews','bookedRanges'));
         }else{
             return redirect('/')->with('error','Not found');
         }

@@ -176,7 +176,18 @@ class Categorycontroller extends Controller
 
     if ($checkin && $checkout) {
         $bookedProductIds = DB::table('booking')
-            ->where('booking_status', '!=', 'cancelled')
+         ->where(function ($query) {
+            // Exclude all bookings that are cancelled, complete or accepted
+            $query->whereNotIn('booking_status', ['cancelled', 'complete'])
+                  ->whereNotIn('booking_status_user', ['cancelled'])
+                  ->where('checkout_status', '!=', 'accept');
+        })
+            //  ->where(function($query) {
+            //     $query->where('booking_status', '!=', 'cancelled')
+            //           ->orWhere('booking_status_user', '!=', 'cancelled')
+            //           ->orWhere('booking_status', '!=', 'complete')
+            //           ->orWhere('checkout_status', '!=', 'accept');
+            // })
             ->where(function ($query) use ($checkin, $checkout) {
                 $query->where('check_in', '<=', $checkout)
                     ->where('check_out', '>=', $checkin);

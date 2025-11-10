@@ -21,7 +21,7 @@
             <div class="row align-items-center ">
                 <div class="col-md-12">
                     <div class="card-body">
-                        <img src="{{ url('') }}/admin/logo/logo.png" alt="" class="img-fluid mb-4">
+                        <img src="{{ url('uploads') }}/<?= site_logo() ?>" alt="" class="img-fluid mb-4">
 
                         <form action="{{ route('resetpassword') }}" method="post">
                             @csrf
