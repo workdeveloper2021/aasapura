@@ -28,6 +28,7 @@ use App\Http\Middleware\Checkauth;
 use App\Http\Middleware\Usernotallowed;
 use App\Http\Middleware\Auditor;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +46,8 @@ use Illuminate\Support\Facades\Route;
         Route::match(['get','post'],'/bulk-enquiry', [Usercontroller::class, 'bulk_enquiry'])->name('bulk_enquiry');
         Route::match(['get','post'],'/my-enquires', [Usercontroller::class, 'my_enquires'])->name('my_enquires');
         Route::match(['get','post'],'/my-wallet', [Usercontroller::class, 'mywallet'])->name('mywallet');
+        Route::get('/pay', [PaymentController::class, 'createOrder'])->name('payment.create');
+        Route::match(['get','post'],'/payment/callback-hdfc', [PaymentController::class, 'callback_HDFC'])->name('payment.callback.HDFC');
  });
 //  --book-controllers
 

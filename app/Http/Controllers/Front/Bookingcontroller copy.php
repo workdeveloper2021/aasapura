@@ -8,10 +8,10 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use Illuminate\Support\Facades\Auth;
+
 use Razorpay\Api\Api;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
-use App\Services\HdfcSmartGatewayService;
 
 
 class Bookingcontroller extends Controller
@@ -264,6 +264,201 @@ public function acceptbooking(Request $request){
         }
     }
 
+    // public function bookcycle(Request $request){
+    //         if(Auth::user()->details_verify == "N"){
+    //             return redirect('/my-setting')->with('error','Please update your account details');
+    //         }
+    //     // session()->forget('booking_submit_items');
+
+    //     $data = session()->get('booking_submit_items');
+    //     if (isset($data) && !empty($data)){
+           
+    //         // Array ( [user_id] => 29655 [product_id] => 10 [check_in] => 2024-09-10 [check_out] => 2024-09-14 ) 29655
+
+    //         $product = Product::where('id',$data['product_id'])->first();
+           
+    //         $booking = [
+    //             'user_id' => $data['user_id'],
+    //             'product_id' => $data['product_id'],
+    //             'check_in' => $data['check_in'],
+    //             'check_out' => $data['check_out'],
+    //         ];
+            
+    //          $discountPercantage = session('discount', 0) ?? 0;
+
+
+
+
+    //         $checkIn = Carbon::createFromFormat('d/m/Y', $booking['check_in']);
+    // $checkOut = Carbon::createFromFormat('d/m/Y', $booking['check_out']);
+    // $days = $checkIn->diffInDays($checkOut);
+
+    // $rentPerDay = $product->rent;
+    // $totalRent = $days * $rentPerDay;
+
+    // // Discounted rent (checkout pe pay karna hai)
+    // $afterDiscount = $totalRent * (1 - ($discountPercantage / 100));
+
+    // // Abhi ke liye payable = Deposit + Extra charge (agar rent >= deposit)
+    // $deposit = $product->price;
+    // $extraCharge = ($afterDiscount >= $deposit) ? 2000 : 0;
+    // $nowPayable = $deposit + $extraCharge;
+          
+
+    //         if ($request->method() == "POST") {
+    //             $credentials = $request->validate([
+    //                 // 'name' => ['required'],
+    //                 // 'address_1' => ['required'],
+    //                 // 'address_2' => ['required'],
+    //                 // 'pincode' => ['required','numeric'],
+    //                 // 'phone' => ['required','numeric'],
+    //                 // 'check_in_image' => 'required|mimes:jpeg,png,jpg,svg,webp',
+    //             ]);
+
+    //             $createorder = create_razorpay_order($nowPayable*100,rand());
+    //             if ($createorder->status == "created") {
+    //           $booking = [
+    //             'order_id' =>$createorder->id,
+    //             'user_id' => $data['user_id'],
+    //             'product_id' => $data['product_id'],
+    //             'seller_id' => $product->user_id,
+    //             'check_in' => $data['check_in'],
+    //             'check_out' => $data['check_out'],
+    //             // 'check_in_image' =>  imagegetnameandupload($request->check_in_image),
+    //             'phone' =>  Auth::user()->phone,
+    //             'name' =>  Auth::user()->name,
+    //             'address_1' =>  Auth::user()->address_1,
+    //             'address_2' =>  Auth::user()->address_2,
+    //             'pincode' =>  Auth::user()->pincode,
+    //             'discount' =>  session('discount', 0) ?? 0,
+    //             'securityamount' =>  $nowPayable ?? 0,
+    //             'verify' =>  'N',
+    //             'payment_verify' =>  'N',
+    //           ];
+    //                 session()->put('booking_data', $booking);
+    //                 return redirect('/pay-items-amount');
+    //             }
+    //         }
+
+    //         if (isset($product)) {
+               
+    //             return view('front.booking.bookcycle',compact('product','booking','discountPercantage'));
+    //         }else{
+    //             return redirect('/')->with('error','Item not found please select cycle for rent');
+    //         }
+    //     }else{
+    //         return redirect('/')->with('error','Select Cylcle for rent');
+    //     }
+
+
+
+    // }
+    
+    
+//     public function bookcycle(Request $request)
+// {
+//     if (Auth::user()->details_verify === 'N') {
+//         return redirect('/my-setting')->with('error', 'Please update your account details');
+//     }
+
+//     $data = session('booking_submit_items');
+//     if (empty($data)) {
+//         return redirect('/')->with('error', 'Select Cycle for rent');
+//     }
+
+//     $product = Product::findOrFail($data['product_id']);
+
+//     // ---------------- Date & Days ----------------
+//     $checkIn  = \Carbon\Carbon::createFromFormat('d/m/Y', $data['check_in']);
+//     $checkOut = \Carbon\Carbon::createFromFormat('d/m/Y', $data['check_out']);
+//     $days     = $checkIn->diffInDays($checkOut);
+
+//     // ---------------- Rent & Discount Logic (same as check_offer) ----------------
+//     $perDayRent   = $product->rent;
+//     $totalRent    = $days * $perDayRent;
+//     $discount     = 0;
+
+//     if ($days >= 0 && $days <= 7) {
+//         $discount = $product->offer_7 ?? 0;
+//     } elseif ($days >= 8 && $days <= 15) {
+//         $discount = $product->offer_15 ?? 0;
+//     } elseif ($days >= 16) {
+//         $discount = $product->offer_30 ?? 0;
+//     }
+
+//     $discountedRent  = $totalRent * (1 - ($discount / 100));
+//     $discountAmount  = $totalRent - $discountedRent;
+//     $deposit         = $product->price;
+
+//     // ---------------- Money-Flow ----------------
+//     $extraCharge       = 0;
+//     $payNow            = 0;
+//     $refundAtCheckout  = 0;
+
+//     if ($discountedRent <= $deposit) {
+//         // Case-1
+//         $payNow           = $deposit;
+//         $refundAtCheckout = $deposit - $discountedRent;
+//     } else {
+//         // Case-2
+//         $extraCharge      = 2000;
+//         $payNow           = $discountedRent + $extraCharge;
+//         $refundAtCheckout = $extraCharge;
+//     }
+
+//     // ---------------- Save to Session ----------------
+//     session([
+//         'discount'            => $discount,
+//         'discount_amount'     => $discountAmount,
+//         'discounted_rent'     => $discountedRent,
+//         'total_rent'          => $totalRent,
+//         'deposit'             => $deposit,
+//         'extra_charge'        => $extraCharge,
+//         'pay_now'             => $payNow,
+//         'refund_at_checkout'  => $refundAtCheckout,
+//         'rent_days'           => $days,
+//     ]);
+
+//     if ($request->isMethod('post')) {
+//         $createorder = create_razorpay_order($payNow * 100, rand());
+//         if ($createorder->status === 'created') {
+//             $booking = [
+//                 'order_id'       => $createorder->id,
+//                 'user_id'        => $data['user_id'],
+//                 'product_id'     => $data['product_id'],
+//                 'seller_id'      => $product->user_id,
+//                 'check_in'       => $data['check_in'],
+//                 'check_out'      => $data['check_out'],
+//                 'phone'          => Auth::user()->phone,
+//                 'name'           => Auth::user()->name,
+//                 'address_1'      => Auth::user()->address_1,
+//                 'address_2'      => Auth::user()->address_2,
+//                 'pincode'        => Auth::user()->pincode,
+//                 'discount'       => $discount,
+//                 'securityamount' => $payNow,
+//                 'verify'         => 'N',
+//                 'payment_verify' => 'N',
+//             ];
+//             session()->put('booking_data', $booking);
+//             return redirect('/pay-items-amount');
+//         }
+//     }
+
+//     return view('front.booking.bookcycle', [
+//         'product'   => $product,
+//         'booking'   => $data,
+//         'days'      => $days,
+//         'discount'  => $discount,
+//         'totalRent' => $totalRent,
+//         'discountAmount'    => $discountAmount,
+//         'discountedRent'    => $discountedRent,
+//         'deposit'   => $deposit,
+//         'extraCharge'       => $extraCharge,
+//         'payNow'    => $payNow,
+//         'refundAtCheckout'  => $refundAtCheckout,
+//     ]);
+// }
+
 
 
 
@@ -398,38 +593,9 @@ public function bookcycle(Request $request)
     public function payitemsamount(){
 
         $data = session()->get('booking_data');
-       // return $data;
         if (isset($data) && !empty($data)){
-             $service = new HdfcSmartGatewayService();
-             $orderId = $data['order_id'];
-                $amount = $data['securityamount'];
-                $returnUrl = route('payment.callback.HDFC');
-           $customer = [
-            'id' => time().Auth::user()->id,
-            'email' => Auth::user()->email,
-            'phone' => Auth::user()->phone,
-            'first_name' => Auth::user()->name,
-            'last_name' => Auth::user()->name,
-            'description' => 'Booking Payment'
-        ];
-
-        $response = $service->createPaymentOrder($amount, $orderId, $returnUrl, $customer);
-           
-        if (isset($response['payment_links']['web'])) {
-            // Redirect to HDFC payment page
-            return redirect($response['payment_links']['web']);
-        }
-        if(isset($response['status']) && ($response['status'] === 'error' || $response['status'] === 'ERROR')){
-            return $response['error_info']['developer_message'];
-        }
-
-         return $response;
-        // If error
-        return redirect()->back()->with('error', 'Unable to create payment session.');
-                // Redirect user to HDFC payment page
-               // return redirect($response['paymentUrl']);
-            // print_r($data);
-            // die;
+            print_r($data);
+            die;
             return view('front.booking.payitemsamount',compact('data'));
         }else{
             return redirect('/');
@@ -437,15 +603,85 @@ public function bookcycle(Request $request)
 
     }
 
-  
+    // public function verifypayment(Request $request){
+
+    //     $data = session()->get('booking_data');
+    //     if (isset($data) && !empty($data)){
+
+    //         $razorpay_payment_id = $request->razorpay_payment_id;
+    //         $razorpay_order_id = $request->razorpay_order_id;
+    //         $razorpay_signature = $request->razorpay_signature;
+
+    //         // echo $razorpay_order_id;
+
+    //     $api = new Api('rzp_test_QnDKE8IS9ia1FB', 'eWBOWYbhq3dhFfZi7czd2GS0');
+
+    //         $verify = $api->payment->fetch($request->razorpay_payment_id);
+
+    //       if ($verify->status == "captured" && $verify->captured == 1) {
+    //         $booking  = new Booking;
+    //         $booking->name = $data['name'];
+    //         $booking->order_id = $request->razorpay_payment_id;
+    //         $booking->product_id = $data['product_id'];
+    //         $booking->seller_id = $data['seller_id'];
+    //         $booking->user_id = $data['user_id'];
+    //         $booking->discount = $data['discount'];
+    //         $booking->securityamount = $data['securityamount'] ?? 0;
+
+    //       $date = Carbon::createFromFormat('d/m/Y', $data['check_in']);
+    //         $checkin = $date->format('Y-m-d');
+           
+    //       $out = Carbon::createFromFormat('d/m/Y', $data['check_out']);
+    //         $checkout = $out->format('Y-m-d');
+            
+         
+            
+    //         $booking->check_in = $checkin;
+    //         $booking->check_out = $checkout;
+    //         // $booking->check_out = $data['check_out'];
+    //         // $booking->check_in_image = $data['check_in_image'];
+    //         $booking->phone = $data['phone'];
+    //         $booking->address_1 = $data['address_1'];
+    //         $booking->address_2 = $data['address_2'];
+    //         $booking->pincode = $data['pincode'];
+    //         $booking->verify = 'Y';
+    //         $booking->payment_verify = 'Y';
+    //         $booking->paid_amount = $verify->amount/100;
+    //         $booking->save();
+    //         session()->forget('booking_submit_items');
+    //         session()->forget('booking_data');
+    //         session()->forget('discount');
+    //         return redirect('/')->with('success','Order Created Successfully');
+    //       }else{
+    //         return redirect('/book-cycle')->with('error','Payment Failed');
+    //       }
+
+    //     }else{
+    //         return redirect('/');
+    //     }
+
+    // }
+    
+    
     
     public function verifypayment(Request $request)
 {
     $data = session()->get('booking_data');
-    return $data ;
     if (empty($data)) {
         return redirect('/');
     }
+
+    // echo "<pre>";
+    // print_r($request->all());
+    //  $signature_algorithm = $request->signature_algorithm;
+    //  $status_id = $request->status_id;
+    //  $signature = $request->signature;
+    //  $order_id = $request->order_id;
+
+    //  $verifyOrder = verifyHdfcOrder($order_id, $signature_algorithm, $status_id, $signature);
+
+    //  print_r($verifyOrder);
+    // echo die;
 
     $razorpay_payment_id = $request->razorpay_payment_id;
     $razorpay_order_id   = $request->razorpay_order_id;
